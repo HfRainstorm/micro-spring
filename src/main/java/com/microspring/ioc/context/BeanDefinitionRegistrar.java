@@ -48,7 +48,11 @@ public class BeanDefinitionRegistrar {
         // 根据class对象解析得到BeanDefinition
         BeanDefinition bd = new BeanDefinition(clazz);
 
-        //if (bd.isNeedToScan()){
+        // 检查是否是@Configuration类
+        if (clazz.isAnnotationPresent(Configuration.class)) {
+            registerConfigurationBean(clazz);
+        }
+
         for (Class<? extends Annotation> ScanPackageAnnotationklass : TargetAnnotation.COMPONENT_SCAN_ANNOTATION) {
             // 只要关于扫描包的注解，就去扫描并注册
             if (clazz.isAnnotationPresent(ScanPackageAnnotationklass)) {
@@ -61,9 +65,32 @@ public class BeanDefinitionRegistrar {
                     invokePackageScanning(annotation);
             }
         }
-        //}
+
         // 注册
         doRegister(bd.getBeanName(), bd);
+    }
+
+    private void registerConfigurationBean(Class<?> configClass) {
+        try {
+            Object configInstance = configClass.getDeclaredConstructor().newInstance();
+
+            // 获取所有带有@Bean注解的方法
+            for (Method method : configClass.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(Bean.class)) {
+                    // 调用方法获取Bean实例
+                    Object beanInstance = method.invoke(configInstance);
+
+                    // 创建BeanDefinition
+                    BeanDefinition bd = new BeanDefinition(beanInstance.getClass());
+                    bd.setBeanInstance(beanInstance);
+
+                    // 注册Bean
+                    doRegister(method.getName(), bd);
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to register configuration bean", e);
+        }
     }
 
     private void invokePackageScanning(Annotation annotation) {
@@ -73,8 +100,6 @@ public class BeanDefinitionRegistrar {
             // ComponentScans的value就是一个ComponentScan的数组
             // 扫描这个数组
             ComponentScan[] scanners = ((ComponentScans) annotation).value();
-            //System.out.println("使用ComponentScans～～～");
-            //System.out.println(scanners.length);
             for (ComponentScan scanner : scanners) {
                 scanPackageToRegister(scanner);
             }
@@ -91,10 +116,8 @@ public class BeanDefinitionRegistrar {
      * @param annotation
      */
     private void scanPackageToRegister(ComponentScan annotation) {
-        System.out.println("扫描:" + annotation.value());
         String packageName = annotation.value();
         if (ValidationUtils.isEmpty(packageName)) {
-            // print log
             log.warn("包名不正确...");
             return;
         }
@@ -102,8 +125,6 @@ public class BeanDefinitionRegistrar {
         if (classes != null) {
             for (Class<?> clazz : classes) {
                 for (Class<? extends Annotation> beanAnnotationClass : TargetAnnotation.BEAN_ANNOTATION)
-                    // 只要存在被Component、Service、Controller、Repository标记的注解
-                    // 都应该作为bean被注册进去
                     if (clazz.isAnnotationPresent(beanAnnotationClass)) {
                         registerBean(clazz);
                         break;
@@ -112,8 +133,7 @@ public class BeanDefinitionRegistrar {
         }
     }
 
-
-    void register(Class<?>... annotatedClasses) {
+    public void register(Class<?>... annotatedClasses) {
         if (annotatedClasses == null) return;
         for (Class<?> clazz : annotatedClasses)
             registerBean(clazz);

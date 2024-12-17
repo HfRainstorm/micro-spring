@@ -1,6 +1,5 @@
 package com.microspring.ioc.bean;
 
-
 import com.microspring.commons.utils.ValidationUtils;
 import com.microspring.ioc.bean.annotation.Component;
 import com.microspring.ioc.bean.annotation.Controller;
@@ -21,12 +20,12 @@ import java.lang.annotation.Annotation;
  * @Date 2020/5/9 12:37 上午
  */
 public class BeanDefinition {
-    private String BeanName;
+    private String beanName;
     private Class<?> clazz;
     private boolean isLazy; // 是否是懒加载
     private BeanScope beanScope; // 类型
     private boolean isProxyed; // 该bean是否被代理过
-//    private boolean needToScan = false; // 是否有扫描包注解
+    private Object beanInstance; // Bean 实例
 
     public BeanDefinition(Class<?> clazz) {
         this.clazz = clazz;
@@ -48,20 +47,14 @@ public class BeanDefinition {
             beanScope = clazz.getAnnotation(Scope.class).value();
         } else beanScope = BeanScope.SINGLETON;
 
-        // 检查ComponentScan
-//        for ( Class<? extends Annotation> klass: TargetAnnotation.COMPONENT_SCAN_ANNOTATION )
-//            if ( clazz.isAnnotationPresent(klass) ){
-//                needToScan = true;
-//                break;
-//            }
         // 提取BeanName（Component/Controller/Service/Respository）
         for (Class<? extends Annotation> klass : TargetAnnotation.BEAN_ANNOTATION)
             if (clazz.isAnnotationPresent(klass)) {
-                BeanName = getBeanName(clazz.getAnnotation(klass));
-                if (!ValidationUtils.isEmpty(BeanName)) break;
+                beanName = getBeanName(clazz.getAnnotation(klass));
+                if (!ValidationUtils.isEmpty(beanName)) break;
             }
         // 如果没有声明BeanName的话，那么就默认是类的SimpleName
-        if (ValidationUtils.isEmpty(BeanName)) BeanName = clazz.getSimpleName();
+        if (ValidationUtils.isEmpty(beanName)) beanName = clazz.getSimpleName();
     }
 
     private String getBeanName(Annotation annotation) {
@@ -78,11 +71,11 @@ public class BeanDefinition {
     }
 
     public String getBeanName() {
-        return BeanName;
+        return beanName;
     }
 
     public void setBeanName(String beanName) {
-        BeanName = beanName;
+        this.beanName = beanName;
     }
 
     public Class<?> getClazz() {
@@ -115,5 +108,13 @@ public class BeanDefinition {
 
     public void setProxyed(boolean proxyed) {
         isProxyed = proxyed;
+    }
+
+    public Object getBeanInstance() {
+        return beanInstance;
+    }
+
+    public void setBeanInstance(Object beanInstance) {
+        this.beanInstance = beanInstance;
     }
 }

@@ -1,13 +1,16 @@
 package com.microspring.ioc.context;
 
 import com.microspring.example.config.AOPConfig;
+import com.microspring.example.config.AppConfig;
 import com.microspring.example.config.Config;
+import com.microspring.example.entity.MyService;
 import com.microspring.example.entity.animal.Cat;
 import com.microspring.example.entity.animal.Lion;
 import com.microspring.example.entity.animal.Tiger;
 import com.microspring.example.entity.fruit.Fruit;
 import com.microspring.example.entity.human.Boy;
 import com.microspring.example.entity.human.Girl;
+import com.microspring.ioc.container.BeanContainer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,7 +22,7 @@ public class AnnotationApplicationContextTest {
 
     // 顶层容器
     private AnnotationApplicationContext applicationContext = new AnnotationApplicationContext(Config.class,
-            AOPConfig.class);
+            AOPConfig.class, AppConfig.class);
 
     @Test
 //    @DisplayName("对Component/Controller/Respository/Service的测试")
@@ -128,6 +131,22 @@ public class AnnotationApplicationContextTest {
         Girl sakura = (Girl) applicationContext.getBean("sakura");
         Assert.assertTrue(xiaolang.getGirl() == sakura);
         Assert.assertTrue(sakura.getBoy() == xiaolang);
+    }
+
+
+
+    @Test
+    public void testConfigurationBean() {
+        BeanDefinitionRegistrar registrar = new BeanDefinitionRegistrar();
+        registrar.register(AppConfig.class);
+
+
+        MyService myService = (MyService) applicationContext.getBean("myService");
+        myService.doSomething(); // 输出: Doing something...
+
+//        BeanContainer container = BeanContainer.getInstance();
+//        MyService myService = (MyService) container.getBean("myService");
+//        myService.doSomething(); // 输出: Doing something...
     }
 
 }

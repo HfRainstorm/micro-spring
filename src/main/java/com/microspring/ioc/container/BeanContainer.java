@@ -1,6 +1,5 @@
 package com.microspring.ioc.container;
 
-
 import com.microspring.commons.utils.ClassUtils;
 import com.microspring.ioc.bean.BeanDefinition;
 import com.microspring.ioc.bean.annotation.Qualifier;
@@ -50,7 +49,6 @@ public class BeanContainer extends AbstractBeanFactory {
         return beanDefinitionMap.get(beanName);
     }
 
-
     @Override
     public ApplicationContext getApplicationContext() {
         return applicationContext;
@@ -98,9 +96,12 @@ public class BeanContainer extends AbstractBeanFactory {
      * @return
      */
     @Override
-    @Deprecated
     public Object getBean(String beanName) {
         if (!containsBeanDefinition(beanName)) return null;
+        BeanDefinition bd = beanDefinitionMap.get(beanName);
+        if (bd.getBeanInstance() != null) {
+            return bd.getBeanInstance();
+        }
         if (isSingleton(beanName)) return getSingleton(beanName);
         if (isPrototype(beanName)) return doCreateBean(beanName, beanDefinitionMap.get(beanName));
         return null;
@@ -193,7 +194,6 @@ public class BeanContainer extends AbstractBeanFactory {
         return beanDefinitionMap.size();
     }
 
-
     /**
      * 注册到单例缓存里
      *
@@ -210,7 +210,6 @@ public class BeanContainer extends AbstractBeanFactory {
         }
         registerSingleton(beanName, beanObject);
     }
-
 
     /**
      * 对指定对象beanObject的field域赋予值value( 这个value为Value标签内的字符串 )
